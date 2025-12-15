@@ -1,24 +1,11 @@
 import connectDB from "./lib/db";
-import User from "./models/User";
+import User, { type IUser } from "./models/User";
 
-await connectDB();
-console.log("✅ Database connected successfully");
-
-//! TESTING ONLY
 try {
-    const existingUser = await User.findOne({ email: "test@example.com" });
-    if (!existingUser) {
-        const newUser = await User.create({
-            email: "test@example.com",
-            name: "Test User",
-            role: "admin",
-        });
-        console.log("👤 Created test user:", newUser.name);
-    } else {
-        console.log("👤 Test user already exists");
-    }
+    await connectDB();
+    console.log("✅ Database connected successfully");
 } catch (error) {
-    console.error("❌ Error creating user:", error);
+    console.log(`Error while connecting to database.\n${error}`);
 }
 
 const server = Bun.serve({
@@ -31,8 +18,26 @@ const server = Bun.serve({
         }
 
         if (url.pathname === "/api/users") {
-            const users = await User.find({});
-            return Response.json(users);
+            if (request.method === "GET") {
+                const users = await User.find({});
+                return Response.json(users);
+            }
+            if (request.method === "POST") {
+                console.log(request);
+                try {
+                    let body = (await request.json()) as IUser;
+                    console.log(body);
+                    const newUser = await User.create(body);
+                    console.log(newUser);
+                    return Response.json(newUser, { status: 201 });
+                } catch (error: any) {
+                    console.log(`Error: ${error}`);
+                    return Response.json(
+                        { error: error.message },
+                        { status: 400 },
+                    );
+                }
+            }
         }
 
         return new Response("404 Not found", { status: 404 });
