@@ -19,15 +19,14 @@ async function connectDB() {
     if (cached.conn) {
         return cached.conn;
     }
-    // If currently connecting (Handshaking), we don't have promise (same promise)
+    // else if currently connecting (Handshaking), we don't have promise (same promise)
     if (!cached.promise) {
-        const opts = {
-            bufferCommands: false, // don't queue if DB is disconnected
-            maxPoolSize: 10, // keeping 10 "Phone Lines" open
-        };
         console.log("⚡ Initializing new database connection...");
         cached.promise = mongoose
-            .connect(MONGODB_URI, opts)
+            .connect(MONGODB_URI, {
+                bufferCommands: false, // don't queue if DB is disconnected
+                maxPoolSize: 10, // keeping 10 "Phone Lines" open
+            })
             .then((mongoose) => {
                 return mongoose;
             });

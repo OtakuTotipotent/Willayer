@@ -1,5 +1,6 @@
 import connectDB from "./lib/db";
-import User, { type IUser } from "./models/User";
+import User from "./models/User";
+import { UserCreateSchema } from "./schemas/userSchema";
 
 try {
     await connectDB();
@@ -23,17 +24,16 @@ const server = Bun.serve({
                 return Response.json(users);
             }
             if (request.method === "POST") {
-                console.log(request);
                 try {
-                    let body = (await request.json()) as IUser;
-                    console.log(body);
-                    const newUser = await User.create(body);
-                    console.log(newUser);
+                    const rawBody = await request.json();
+                    const validatedBody = UserCreateSchema.parse(rawBody);
+                    const newUser = await User.create(validatedBody);
                     return Response.json(newUser, { status: 201 });
                 } catch (error: any) {
-                    console.log(`Error: ${error}`);
                     return Response.json(
-                        { error: error.message },
+                        {
+                            error: error.errors || error.message,
+                        },
                         { status: 400 },
                     );
                 }

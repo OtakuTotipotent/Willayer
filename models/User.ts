@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-// VS Code helper Interface
+// Helper Interface
 export interface IUser extends Document {
     email: string;
     name: string;
