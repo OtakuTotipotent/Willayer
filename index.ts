@@ -1,16 +1,11 @@
 import connectDB from "./lib/db";
-import User from "./models/User";
-import { UserCreateSchema } from "./schemas/userSchema";
+import { UserService } from "./services/userService";
 
-try {
-    await connectDB();
-    console.log("✅ Database connected successfully");
-} catch (error) {
-    console.log(`Error while connecting to database.\n${error}`);
-}
+await connectDB();
+console.log("✅ Database connected successfully");
 
 const server = Bun.serve({
-    port: 3000,
+    port: Number(process.env.PORT) || 3000,
     async fetch(request) {
         const url = new URL(request.url);
 
@@ -19,24 +14,28 @@ const server = Bun.serve({
         }
 
         if (url.pathname === "/api/users") {
-            if (request.method === "GET") {
-                const users = await User.find({});
-                return Response.json(users);
-            }
-            if (request.method === "POST") {
-                try {
-                    const rawBody = await request.json();
-                    const validatedBody = UserCreateSchema.parse(rawBody);
-                    const newUser = await User.create(validatedBody);
-                    return Response.json(newUser, { status: 201 });
-                } catch (error: any) {
-                    return Response.json(
-                        {
-                            error: error.errors || error.message,
-                        },
-                        { status: 400 },
-                    );
+            try {
+                if (request.method === "GET") {
+                    const users = UserService.getAllUsers();
+                    return Response.json(users);
                 }
+                if (request.method === "POST") {
+                    const rawBody = await request.json();
+                    const newUser = await UserService.createUser(rawBody);
+                    return Response.json(newUser, { status: 201 });
+                }
+            } catch (error: any) {
+                // Centralized error handling
+                console.error(`Error at ${url.pathname}: `, error);
+                return Response.json(
+                    {
+                        error:
+                            error.errors ||
+                            error.message ||
+                            "Internal Server Error",
+                    },
+                    { status: error.name === "ZodError" ? 400 : 500 },
+                );
             }
         }
 
